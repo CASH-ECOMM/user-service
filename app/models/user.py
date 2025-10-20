@@ -20,6 +20,7 @@ class User(Base):
     # Personal Information
     first_name = Column(String(255), nullable=False)
     last_name = Column(String(255), nullable=False)
+    email = Column(String(255), unique=True, nullable=False, index=True)
 
     # Shipping Address
     street_name = Column(String(255), nullable=False)
@@ -48,6 +49,7 @@ class User(Base):
         return {
             "id": str(self.id),
             "username": self.username,
+            "email": self.email,
             "first_name": self.first_name,
             "last_name": self.last_name,
             "street_name": self.street_name,

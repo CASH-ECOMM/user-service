@@ -42,7 +42,7 @@ class Config:
     SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "true").lower() == "true"
 
     # Application Configuration
-    APP_NAME = os.getenv("APP_NAME", "UserService")
+    APP_NAME = os.getenv("APP_NAME", "CASH Ecommerce")
     ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
     PASSWORD_RESET_TOKEN_EXPIRATION_MINUTES = int(
         os.getenv("PASSWORD_RESET_TOKEN_EXPIRATION_MINUTES", "30")

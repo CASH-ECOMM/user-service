@@ -1,7 +1,6 @@
 import grpc
 from datetime import datetime, timedelta
 import logging
-from typing import Optional
 from uuid import UUID
 
 # Import generated gRPC code (will be generated from proto file)
@@ -32,6 +31,8 @@ class UserServiceServicer(user_service_pb2_grpc.UserServiceServicer):
         db = SessionLocal()
         try:
             # Validate required fields
+            email_raw = request.email.strip() if request.email else ""
+
             if not all(
                 [
                     request.username,
@@ -43,11 +44,14 @@ class UserServiceServicer(user_service_pb2_grpc.UserServiceServicer):
                     request.shipping_address.city,
                     request.shipping_address.country,
                     request.shipping_address.postal_code,
+                    email_raw,
                 ]
             ):
                 return user_service_pb2.SignUpResponse(
                     success=False, message="All fields are required"
                 )
+
+            normalized_email = email_raw.lower()
 
             # Check if username already exists
             existing_user = (
@@ -56,6 +60,15 @@ class UserServiceServicer(user_service_pb2_grpc.UserServiceServicer):
             if existing_user:
                 return user_service_pb2.SignUpResponse(
                     success=False, message="Username already exists"
+                )
+
+            # Check if email already exists
+            existing_email = (
+                db.query(User).filter(User.email == normalized_email).first()
+            )
+            if existing_email:
+                return user_service_pb2.SignUpResponse(
+                    success=False, message="Email already registered"
                 )
 
             # Hash password
@@ -67,6 +80,7 @@ class UserServiceServicer(user_service_pb2_grpc.UserServiceServicer):
                 password_hash=password_hash,
                 first_name=request.first_name,
                 last_name=request.last_name,
+                email=normalized_email,
                 street_name=request.shipping_address.street_name,
                 street_number=request.shipping_address.street_number,
                 city=request.shipping_address.city,
@@ -162,15 +176,36 @@ class UserServiceServicer(user_service_pb2_grpc.UserServiceServicer):
                     success=False, message="Username or email is required"
                 )
 
-            # Find user by username
-            # Note: Since we don't have email field in User model, we use username
-            user = db.query(User).filter(User.username == request.username).first()
+            user = None
+
+            if request.username:
+                user = db.query(User).filter(User.username == request.username).first()
+
+            if not user and request.email:
+                user = (
+                    db.query(User)
+                    .filter(User.email == request.email.strip().lower())
+                    .first()
+                )
+
             if not user:
                 # Don't reveal if user exists or not for security
                 return user_service_pb2.ResetPasswordResponse(
                     success=True,
                     message="If the user exists, a password reset email has been sent",
                 )
+
+            if request.email:
+                email_normalized = request.email.strip().lower()
+                if email_normalized != user.email:
+                    logger.warning(
+                        "Password reset requested for user %s with mismatched email",
+                        user.username,
+                    )
+                    return user_service_pb2.ResetPasswordResponse(
+                        success=True,
+                        message="If the user exists, a password reset email has been sent",
+                    )
 
             # Generate reset token
             reset_token = generate_reset_token(str(user.id))
@@ -188,10 +223,8 @@ class UserServiceServicer(user_service_pb2_grpc.UserServiceServicer):
                 db.commit()
 
             # Send password reset email
-            # Note: We're using username as email for this example
-            # In production, you would have a separate email field
             email_sent = email_service.send_password_reset_email(
-                to_email=request.email or f"{user.username}@example.com",
+                to_email=user.email,
                 username=user.username,
                 reset_token=reset_token,
             )
@@ -213,6 +246,82 @@ class UserServiceServicer(user_service_pb2_grpc.UserServiceServicer):
             logger.error(f"Error during password reset: {str(e)}")
             return user_service_pb2.ResetPasswordResponse(
                 success=False, message="Password reset request failed"
+            )
+        finally:
+            db.close()
+
+    def ConfirmPasswordReset(self, request, context):
+        """Confirm password reset using the provided token"""
+        db = SessionLocal()
+        try:
+            if not request.token or not request.new_password:
+                return user_service_pb2.ConfirmPasswordResetResponse(
+                    success=False, message="Token and new password are required"
+                )
+
+            token_check = validate_reset_token(request.token)
+            if not token_check.get("valid"):
+                return user_service_pb2.ConfirmPasswordResetResponse(
+                    success=False,
+                    message=token_check.get("error", "Invalid reset token"),
+                )
+
+            reset_record = (
+                db.query(PasswordResetToken)
+                .filter(PasswordResetToken.token == token_check.get("jti"))
+                .first()
+            )
+
+            if not reset_record:
+                return user_service_pb2.ConfirmPasswordResetResponse(
+                    success=False, message="Reset token not found"
+                )
+
+            if reset_record.used == "true":
+                return user_service_pb2.ConfirmPasswordResetResponse(
+                    success=False, message="Reset token has already been used"
+                )
+
+            if reset_record.expires_at and datetime.utcnow() > reset_record.expires_at:
+                return user_service_pb2.ConfirmPasswordResetResponse(
+                    success=False, message="Reset token has expired"
+                )
+
+            user = db.query(User).filter(User.id == reset_record.user_id).first()
+            if not user:
+                return user_service_pb2.ConfirmPasswordResetResponse(
+                    success=False, message="User not found"
+                )
+
+            user.password_hash = hash_password(request.new_password)
+            user.last_password_reset = datetime.utcnow()
+
+            reset_record.used = "true"
+            reset_record.used_at = datetime.utcnow()
+
+            # Revoke existing sessions for security
+            active_sessions = (
+                db.query(Session)
+                .filter(Session.user_id == user.id, Session.revoked == "false")
+                .all()
+            )
+            for session in active_sessions:
+                session.revoked = "true"
+                session.revoked_at = datetime.utcnow()
+
+            db.commit()
+
+            logger.info("Password reset confirmed for user %s", user.username)
+
+            return user_service_pb2.ConfirmPasswordResetResponse(
+                success=True, message="Password reset successful"
+            )
+
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Error confirming password reset: {str(e)}")
+            return user_service_pb2.ConfirmPasswordResetResponse(
+                success=False, message="Password reset confirmation failed"
             )
         finally:
             db.close()
@@ -301,6 +410,7 @@ class UserServiceServicer(user_service_pb2_grpc.UserServiceServicer):
                 first_name=user.first_name,
                 last_name=user.last_name,
                 shipping_address=address,
+                email=user.email,
                 message="User found",
             )
 
