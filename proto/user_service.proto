@@ -1,25 +1,29 @@
 syntax = "proto3";
 
+option java_multiple_files = true;
+option java_package = "com.cash.grpc.userservice";
+option java_outer_classname = "UserServiceProto";
+
 package userservice;
 
 // User Service Definition
 service UserService {
   // User Registration
   rpc SignUp(SignUpRequest) returns (SignUpResponse);
-  
+
   // User Authentication
   rpc SignIn(SignInRequest) returns (SignInResponse);
-  
+
   // Password Reset
   rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse);
   rpc ConfirmPasswordReset(ConfirmPasswordResetRequest) returns (ConfirmPasswordResetResponse);
-  
+
   // Token Validation
   rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
-  
+
   // User Lookup
   rpc GetUser(GetUserRequest) returns (GetUserResponse);
-  
+
   // Logout (optional - for session tracking)
   rpc Logout(LogoutRequest) returns (LogoutResponse);
 }
