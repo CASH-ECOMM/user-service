@@ -1,0 +1,130 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.cash.grpc.userservice";
+option java_outer_classname = "UserServiceProto";
+
+package userservice;
+
+// User Service Definition
+service UserService {
+  // User Registration
+  rpc SignUp(SignUpRequest) returns (SignUpResponse);
+
+  // User Authentication
+  rpc SignIn(SignInRequest) returns (SignInResponse);
+
+  // Password Reset
+  rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse);
+  rpc ConfirmPasswordReset(ConfirmPasswordResetRequest) returns (ConfirmPasswordResetResponse);
+
+  // Token Validation
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+
+  // User Lookup
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+
+  // Logout (optional - for session tracking)
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+}
+
+// Message Definitions
+
+// Address embedded message
+message Address {
+  string street_name = 1;
+  string street_number = 2;
+  string city = 3;
+  string country = 4;
+  string postal_code = 5;
+}
+
+// Sign Up Request and Response
+message SignUpRequest {
+  string username = 1;
+  string password = 2;
+  string first_name = 3;
+  string last_name = 4;
+  Address shipping_address = 5;
+  string email = 6;
+}
+
+message SignUpResponse {
+  bool success = 1;
+  string message = 2;
+  int32 user_id = 3;
+}
+
+// Sign In Request and Response
+message SignInRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message SignInResponse {
+  bool success = 1;
+  string jwt = 2;
+  string message = 3;
+  int32 user_id = 4;
+}
+
+// Reset Password Request and Response
+message ResetPasswordRequest {
+  string username = 1;
+  string email = 2;
+}
+
+message ResetPasswordResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ConfirmPasswordResetRequest {
+  string token = 1;
+  string new_password = 2;
+}
+
+message ConfirmPasswordResetResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// Validate Token Request and Response
+message ValidateTokenRequest {
+  string jwt = 1;
+}
+
+message ValidateTokenResponse {
+  bool valid = 1;
+  int32 user_id = 2;
+  string username = 3;
+  string role = 4;
+  string message = 5;
+}
+
+// Get User Request and Response
+message GetUserRequest {
+  int32 user_id = 1;
+}
+
+message GetUserResponse {
+  bool success = 1;
+  int32 user_id = 2;
+  string username = 3;
+  string first_name = 4;
+  string last_name = 5;
+  Address shipping_address = 6;
+  string email = 7;
+  string message = 8;
+}
+
+// Logout Request and Response
+message LogoutRequest {
+  string jwt = 1;
+  int32 user_id = 2;
+}
+
+message LogoutResponse {
+  bool success = 1;
+  string message = 2;
+}
