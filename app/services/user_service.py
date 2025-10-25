@@ -1,7 +1,6 @@
 import grpc
 from datetime import datetime, timedelta
 import logging
-from uuid import UUID
 
 # Import generated gRPC code (will be generated from proto file)
 import app.generated.user_service_pb2 as user_service_pb2
@@ -97,7 +96,7 @@ class UserServiceServicer(user_service_pb2_grpc.UserServiceServicer):
             return user_service_pb2.SignUpResponse(
                 success=True,
                 message="User registered successfully",
-                user_id=str(new_user.id),
+                user_id=new_user.id,
             )
 
         except Exception as e:
@@ -134,7 +133,7 @@ class UserServiceServicer(user_service_pb2_grpc.UserServiceServicer):
 
             # Generate JWT token
             jwt_token = generate_jwt(
-                user_id=str(user.id), username=user.username, role=user.role
+                user_id=user.id, username=user.username, role=user.role
             )
 
             # Optionally store session for tracking (for logout functionality)
@@ -154,7 +153,7 @@ class UserServiceServicer(user_service_pb2_grpc.UserServiceServicer):
                 success=True,
                 jwt=jwt_token,
                 message="Sign in successful",
-                user_id=str(user.id),
+                user_id=user.id,
             )
 
         except Exception as e:
@@ -208,7 +207,7 @@ class UserServiceServicer(user_service_pb2_grpc.UserServiceServicer):
                     )
 
             # Generate reset token
-            reset_token = generate_reset_token(str(user.id))
+            reset_token = generate_reset_token(user.id)
 
             # Store reset token in database
             token_data = validate_reset_token(reset_token)
@@ -381,14 +380,7 @@ class UserServiceServicer(user_service_pb2_grpc.UserServiceServicer):
                 )
 
             # Find user by ID
-            try:
-                user_uuid = UUID(request.user_id)
-            except ValueError:
-                return user_service_pb2.GetUserResponse(
-                    success=False, message="Invalid user ID format"
-                )
-
-            user = db.query(User).filter(User.id == user_uuid).first()
+            user = db.query(User).filter(User.id == request.user_id).first()
             if not user:
                 return user_service_pb2.GetUserResponse(
                     success=False, message="User not found"
@@ -405,7 +397,7 @@ class UserServiceServicer(user_service_pb2_grpc.UserServiceServicer):
 
             return user_service_pb2.GetUserResponse(
                 success=True,
-                user_id=str(user.id),
+                user_id=user.id,
                 username=user.username,
                 first_name=user.first_name,
                 last_name=user.last_name,

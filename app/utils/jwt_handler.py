@@ -5,12 +5,12 @@ from app.config import config
 import uuid
 
 
-def generate_jwt(user_id: str, username: str, role: str = "user") -> str:
+def generate_jwt(user_id: int, username: str, role: str = "user") -> str:
     """
     Generate a JWT token for a user
 
     Args:
-        user_id: User's unique identifier
+        user_id: User's unique identifier (integer)
         username: User's username
         role: User's role (default: 'user')
 
@@ -74,12 +74,12 @@ def validate_jwt(token: str) -> Dict[str, Any]:
         return {"valid": False, "error": f"Token validation error: {str(e)}"}
 
 
-def generate_reset_token(user_id: str, expiration_minutes: Optional[int] = None) -> str:
+def generate_reset_token(user_id: int, expiration_minutes: Optional[int] = None) -> str:
     """
     Generate a password reset token
 
     Args:
-        user_id: User's unique identifier
+        user_id: User's unique identifier (integer)
         expiration_minutes: Token expiration time in minutes
 
     Returns:

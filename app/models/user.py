@@ -1,7 +1,5 @@
-from sqlalchemy import Column, String, DateTime
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Column, String, DateTime, Integer, BigInteger
 from datetime import datetime
-import uuid
 from app.database import Base
 
 
@@ -10,8 +8,8 @@ class User(Base):
 
     __tablename__ = "users"
 
-    # Primary Key
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    # Primary Key - auto-incrementing integer
+    id = Column(Integer, primary_key=True, autoincrement=True)
 
     # Authentication fields
     username = Column(String(255), unique=True, nullable=False, index=True)
@@ -47,7 +45,7 @@ class User(Base):
     def to_dict(self):
         """Convert user object to dictionary (exclude sensitive data)"""
         return {
-            "id": str(self.id),
+            "id": self.id,
             "username": self.username,
             "email": self.email,
             "first_name": self.first_name,
@@ -67,8 +65,8 @@ class Session(Base):
 
     __tablename__ = "sessions"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, nullable=False, index=True)
     token_jti = Column(String(255), unique=True, nullable=False, index=True)  # JWT ID
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     expires_at = Column(DateTime, nullable=False)
@@ -88,8 +86,8 @@ class PasswordResetToken(Base):
 
     __tablename__ = "password_reset_tokens"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, nullable=False, index=True)
     token = Column(String(255), unique=True, nullable=False, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     expires_at = Column(DateTime, nullable=False)

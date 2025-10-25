@@ -52,7 +52,7 @@ message SignUpRequest {
 message SignUpResponse {
   bool success = 1;
   string message = 2;
-  string user_id = 3;
+  int32 user_id = 3;
 }
 
 // Sign In Request and Response
@@ -65,7 +65,7 @@ message SignInResponse {
   bool success = 1;
   string jwt = 2;
   string message = 3;
-  string user_id = 4;
+  int32 user_id = 4;
 }
 
 // Reset Password Request and Response
@@ -96,7 +96,7 @@ message ValidateTokenRequest {
 
 message ValidateTokenResponse {
   bool valid = 1;
-  string user_id = 2;
+  int32 user_id = 2;
   string username = 3;
   string role = 4;
   string message = 5;
@@ -104,12 +104,12 @@ message ValidateTokenResponse {
 
 // Get User Request and Response
 message GetUserRequest {
-  string user_id = 1;
+  int32 user_id = 1;
 }
 
 message GetUserResponse {
   bool success = 1;
-  string user_id = 2;
+  int32 user_id = 2;
   string username = 3;
   string first_name = 4;
   string last_name = 5;
@@ -121,7 +121,7 @@ message GetUserResponse {
 // Logout Request and Response
 message LogoutRequest {
   string jwt = 1;
-  string user_id = 2;
+  int32 user_id = 2;
 }
 
 message LogoutResponse {
