@@ -24,11 +24,14 @@ def serve():
 
     # Initialize database
     logger.info("Initializing database...")
+    logger.info(f"DATABASE_URL from config: {config.DATABASE_URL}")
+    logger.info(f"Environment: {config.ENVIRONMENT}")
     try:
         init_db()
         logger.info("Database initialized successfully")
     except Exception as e:
         logger.error(f"Failed to initialize database: {str(e)}")
+        logger.error(f"DATABASE_URL was: {config.DATABASE_URL}")
         sys.exit(1)
 
     # Create gRPC server
