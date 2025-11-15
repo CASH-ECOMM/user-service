@@ -8,18 +8,19 @@ load_dotenv()
 class Config:
     """Application configuration"""
 
-    # Database Configuration
-    DB_HOST = os.getenv("DB_HOST", "localhost")
-    DB_PORT = os.getenv("DB_PORT", "5432")
-    DB_NAME = os.getenv("DB_NAME", "user_service_db")
-    DB_USER = os.getenv("DB_USER", "postgres")
-    DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
+    # Database Configuration - Railway provides DATABASE_URL directly
+    DATABASE_URL = os.getenv("DATABASE_URL")
 
-    # Build database URL
-    DATABASE_URL = os.getenv(
-        "DATABASE_URL",
-        f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}",
-    )
+    # If DATABASE_URL not provided (local development), build it from components
+    if not DATABASE_URL:
+        DB_HOST = os.getenv("DB_HOST", "localhost")
+        DB_PORT = os.getenv("DB_PORT", "5432")
+        DB_NAME = os.getenv("DB_NAME", "user_service_db")
+        DB_USER = os.getenv("DB_USER", "postgres")
+        DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
+        DATABASE_URL = (
+            f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+        )
 
     # For development with SQLite, uncomment:
     # DATABASE_URL = 'sqlite:///./user_service.db'
